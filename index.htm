@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Doodle Love: Remastered</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
+
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            /* Красивий фон у клітинку (зошит) */
+            background-color: #fdfcf0;
+            background-image: 
+                linear-gradient(#e1e8ed 1px, transparent 1px),
+                linear-gradient(90deg, #e1e8ed 1px, transparent 1px);
+            background-size: 40px 40px;
+            font-family: 'Fredoka One', cursive;
+            touch-action: none;
+            user-select: none;
+        }
+
+        #gameCanvas {
+            display: block;
+            margin: 0 auto;
+            background: transparent;
+            box-shadow: 0 0 50px rgba(0,0,0,0.05);
+        }
+
+        /* UI Елементи */
+        .overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(255, 255, 255, 0.95);
+            z-index: 10;
+            text-align: center;
+            transition: opacity 0.3s;
+        }
+
+        h1 { 
+            color: #ff4757; 
+            font-size: 45px; 
+            margin-bottom: 5px; 
+            text-shadow: 3px 3px 0px #2f3542; 
+            letter-spacing: 2px;
+        }
+        h2 { color: #535c68; font-size: 22px; margin-bottom: 25px; }
+        p { color: #57606f; font-size: 18px; max-width: 85%; line-height: 1.6; background: #fff; padding: 20px; border-radius: 15px; border: 2px dashed #ccc; }
+
+        .btn {
+            background: #2ed573;
+            color: white;
+            border: none;
+            padding: 15px 50px;
+            font-size: 26px;
+            border-radius: 50px;
+            cursor: pointer;
+            font-family: 'Fredoka One', cursive;
+            box-shadow: 0 8px 0 #219d55, 0 15px 20px rgba(0,0,0,0.2);
+            transition: all 0.1s;
+            margin-top: 25px;
+            text-transform: uppercase;
+        }
+        .btn:active { transform: translateY(8px); box-shadow: 0 0 0 #219d55, inset 0 5px 10px rgba(0,0,0,0.2); }
+
+        /* Вибір персонажа */
+        .char-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+        .char-option {
+            border: 4px solid #dfe4ea;
+            border-radius: 20px;
+            padding: 15px;
+            cursor: pointer;
+            transition: all 0.2s;
+            background: white;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        .char-option.selected {
+            border-color: #ff4757;
+            background: #ffeaa7;
+            transform: scale(1.1);
+            box-shadow: 0 10px 20px rgba(255, 71, 87, 0.2);
+        }
+        .char-img {
+            width: 70px;
+            height: 70px;
+            object-fit: contain;
+            margin-bottom: 10px;
+            filter: drop-shadow(3px 3px 0 rgba(0,0,0,0.1));
+        }
+        
+        /* HUD під час гри */
+        #hud {
+            position: absolute;
+            top: 10px;
+            left: 0;
+            width: 100%;
+            display: none;
+            justify-content: space-between;
+            padding: 10px 20px;
+            box-sizing: border-box;
+            pointer-events: none;
+            z-index: 5;
+        }
+        .hud-text {
+            font-size: 28px;
+            color: #2f3542;
+            background: rgba(255,255,255,0.9);
+            padding: 8px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            border: 2px solid #f1f2f6;
+        }
+        .hp-bar { color: #ff4757; letter-spacing: 5px; }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <div id="menuScreen" class="overlay">
+        <h1>DOODLE LOVE</h1>
+        <h2>Обери свого героя:</h2>
+        <div class="char-grid">
+            <div class="char-option selected" onclick="selectChar('Tito', this)">
+                <img id="menuImgTito" class="char-img" src="" alt="Tito">
+                <span>Tito</span>
+            </div>
+            <div class="char-option" onclick="selectChar('Smartik', this)">
+                <img id="menuImgSmartik" class="char-img" src="" alt="Smartik">
+                <span>Smartik</span>
+            </div>
+            <div class="char-option" onclick="selectChar('Junior', this)">
+                <img id="menuImgJunior" class="char-img" src="" alt="Junior">
+                <span>Junior</span>
+            </div>
+            <div class="char-option" onclick="selectChar('Fil', this)">
+                <img id="menuImgFil" class="char-img" src="" alt="Fil">
+                <span>Fil</span>
+            </div>
+        </div>
+        <button class="btn" onclick="showInstructions()">ГРАТИ</button>
+    </div>
+
+    <div id="instrScreen" class="overlay hidden">
+        <h1>ЯК ГРАТИ</h1>
+        <p>
+           📱 <b>Телефон:</b> Нахиляй вліво/вправо<br>
+           💻 <b>ПК:</b> Стрілочки &#8592; та &#8594;<br><br>
+           🚀 <span style="color:#2ed573">Зелений буст</span> - супер швидкість!<br>
+           💣 <span style="color:#2f3542">Чорна діра</span> - мінус сердечко!<br>
+           🍪 <span style="color:#a4b0be">Сірі платформи</span> - ламаються!
+        </p>
+        <button class="btn" onclick="startGame()">ПОГНАЛИ!</button>
+    </div>
+
+    <div id="gameOverScreen" class="overlay hidden">
+        <h1 style="color:#2f3542">ОЙ, ВСЕ!</h1>
+        <h2 id="finalScore" style="font-size: 30px; color: #ff4757;">Рахунок: 0</h2>
+        <button class="btn" onclick="location.reload()">ЩЕ РАЗ</button>
+    </div>
+
+    <div id="hud">
+        <div class="hud-text" id="scoreDisplay">0</div>
+        <div class="hud-text hp-bar" id="hpDisplay">❤❤❤</div>
+    </div>
+
+    <canvas id="gameCanvas"></canvas>
+
+<script>
+    // --- ВБУДОВАНІ SVG АСЕТИ (Щоб картинки завжди працювали) ---
+    // Я згенерував прості векторні малюнки для героїв та предметів
+    const SVGS = {
+        'Tito': `Tito.png`,
+        'Smartik': `Smartik.png`,
+        'Junior': `Junior.png`,
+        'Fil': `Fil.png`,
+        'Spring': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><path d="M 10 40 Q 25 10 40 40" fill="none" stroke="%23747d8c" stroke-width="4"/><rect x="5" y="40" width="40" height="5" fill="%232f3542"/></svg>`,
+        'Batut': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><ellipse cx="25" cy="35" rx="20" ry="5" fill="%23ff6348" stroke="%232f3542" stroke-width="2"/><line x1="10" y1="35" x2="5" y2="45" stroke="%232f3542" stroke-width="2"/><line x1="40" y1="35" x2="45" y2="45" stroke="%232f3542" stroke-width="2"/></svg>`,
+        'Imba': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><polygon points="25,5 31,18 45,18 34,26 38,39 25,31 12,39 16,26 5,18 19,18" fill="%232ed573" stroke="%232f3542" stroke-width="2"/></svg>`,
+        'Black': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="black"/><circle cx="25" cy="25" r="18" fill="none" stroke="%23a55eea" stroke-width="2" stroke-dasharray="4"/></svg>`
+    };
+
+    // Встановлюємо картинки для меню
+    document.getElementById('menuImgTito').src = SVGS['Tito'];
+    document.getElementById('menuImgSmartik').src = SVGS['Smartik'];
+    document.getElementById('menuImgJunior').src = SVGS['Junior'];
+    document.getElementById('menuImgFil').src = SVGS['Fil'];
+
+    // --- ЗВУКОВА СИСТЕМА (Web Audio API) ---
+    const AudioContext = window.AudioContext || window.webkitAudioContext;
+    let audioCtx;
+
+    function initAudio() {
+        if (!audioCtx) audioCtx = new AudioContext();
+    }
+
+    function playSound(type) {
+        if (!audioCtx) return;
+        const osc = audioCtx.createOscillator();
+        const gainNode = audioCtx.createGain();
+        osc.connect(gainNode);
+        gainNode.connect(audioCtx.destination);
+
+        const now = audioCtx.currentTime;
+
+        if (type === 'jump') {
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+        else if (type === 'spring') {
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(200, now);
+            osc.frequency.linearRampToValueAtTime(800, now + 0.3);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.3);
+            osc.start(now);
+            osc.stop(now + 0.3);
+        }
+        else if (type === 'break') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(150, now);
+            osc.frequency.linearRampToValueAtTime(50, now + 0.1);
+            gainNode.gain.setValueAtTime(0.2, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+        else if (type === 'gameover') {
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(300, now);
+            osc.frequency.exponentialRampToValueAtTime(50, now + 0.5);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.5);
+            osc.start(now);
+            osc.stop(now + 0.5);
+        }
+    }
+
+    // --- НАЛАШТУВАННЯ ТА ЗМІННІ ---
+    const canvas = document.getElementById('gameCanvas');
+    const ctx = canvas.getContext('2d');
+    
+    canvas.width = window.innerWidth > 500 ? 480 : window.innerWidth;
+    canvas.height = window.innerHeight;
+
+    let gameState = 'MENU';
+    let score = 0;
+    let selectedCharName = 'Tito';
+    let playerHP = 3;
+
+    // Завантаження зображень з SVGS
+    const images = {};
+    for (let key in SVGS) {
+        let img = new Image();
+        img.src = SVGS[key];
+        images[key] = img;
+    }
+    // Для платформ ми будемо малювати кодом для кращої продуктивності, але предмети - картинками
+
+    const player = {
+        x: canvas.width / 2 - 25,
+        y: canvas.height / 2,
+        width: 50,
+        height: 50,
+        vx: 0,
+        vy: 0,
+        isImba: false,
+        imbaTimer: 0,
+        invincible: false
+    };
+
+    const gravity = 0.45;
+    let platforms = [];
+    let items = [];
+    let particles = [];
+    
+    // Зберігаємо X останньої платформи, щоб нова була поруч
+    let lastPlatformX = canvas.width / 2; 
+
+    let tiltX = 0;
+    let keys = { left: false, right: false };
+
+    // --- ЛОГІКА МЕНЮ ---
+    
+    function selectChar(name, el) {
+        selectedCharName = name;
+        document.querySelectorAll('.char-option').forEach(d => d.classList.remove('selected'));
+        el.classList.add('selected');
+        initAudio(); // Ініціалізація аудіо при кліку
+    }
+
+    function showInstructions() {
+        document.getElementById('menuScreen').classList.add('hidden');
+        document.getElementById('instrScreen').classList.remove('hidden');
+        gameState = 'INSTR';
+        initAudio();
+    }
+
+    function startGame() {
+        initAudio();
+        // iOS дозвіл
+        if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+            DeviceOrientationEvent.requestPermission()
+                .then(response => {
+                    if (response === 'granted') {
+                        window.addEventListener('deviceorientation', handleOrientation);
+                    }
+                })
+                .catch(console.error);
+        } else {
+            window.addEventListener('deviceorientation', handleOrientation);
+        }
+
+        document.getElementById('instrScreen').classList.add('hidden');
+        document.getElementById('hud').style.display = 'flex';
+        gameState = 'GAME';
+        resetGame();
+        loop();
+    }
+
+    // --- ГЕНЕРАЦІЯ (ПОКРАЩЕНА) ---
+
+    function createPlatform(y) {
+        let type = 'normal';
+        if (score >= 500 && Math.random() < 0.25) type = 'break';
+        else if (score >= 100 && Math.random() < 0.15) type = 'jump';
+
+        // 1. Покращена логіка позиції X (щоб можна було дострибнути)
+        let minX = Math.max(0, lastPlatformX - 250); // Макс стрибок вліво
+        let maxX = Math.min(canvas.width - 70, lastPlatformX + 250); // Макс стрибок вправо
+        
+        let x = Math.random() * (maxX - minX) + minX;
+        
+        // Корекція, щоб не вилазило за екран
+        if (x < 0) x = 0;
+        if (x > canvas.width - 70) x = canvas.width - 70;
+
+        lastPlatformX = x;
+
+        let p = {
+            x: x,
+            y: y,
+            w: 70, // Трохи ширші платформи для зручності
+            h: 18,
+            type: type,
+            active: true
+        };
+
+        // Генерація предметів (тільки на міцних платформах)
+        if (type !== 'break' && Math.random() < 0.12) {
+            let itemType = 'spring';
+            let r = Math.random();
+            if (r < 0.45) itemType = 'spring';
+            else if (r < 0.65) itemType = 'batut';
+            else if (r < 0.75) itemType = 'imba';
+            else if (r < 0.95) itemType = 'black';
+
+            // Назва ключа в об'єкті images
+            let imgKey = '';
+            if(itemType === 'spring') imgKey = 'Spring';
+            if(itemType === 'batut') imgKey = 'Batut';
+            if(itemType === 'imba') imgKey = 'Imba';
+            if(itemType === 'black') imgKey = 'Black';
+
+            items.push({
+                x: p.x + p.w/2 - 15,
+                y: p.y - 30,
+                w: 30,
+                h: 30,
+                type: itemType,
+                imgKey: imgKey,
+                platform: p
+            });
+        }
+        return p;
+    }
+
+    function resetGame() {
+        score = 0;
+        playerHP = 3;
+        updateHPDisplay();
+        player.y = canvas.height - 150;
+        player.x = canvas.width/2 - 25;
+        player.vy = -12;
+        player.isImba = false;
+        lastPlatformX = canvas.width/2;
+        
+        platforms = [];
+        items = [];
+        
+        // Стартові платформи (ближче одна до одної)
+        // Крок 70px гарантує, що можна легко дострибнути
+        for (let i = canvas.height; i > 0; i -= 70) {
+            let p = createPlatform(i);
+            p.type = 'normal'; // Перші платформи завжди нормальні
+            platforms.push(p);
+        }
+    }
+
+    // --- ОСНОВНИЙ ЦИКЛ ---
+
+    function loop() {
+        if (gameState !== 'GAME') return;
+        update();
+        draw();
+        requestAnimationFrame(loop);
+    }
+
+    function update() {
+        // Управління
+        let speed = 7;
+        if (player.isImba) speed = 10;
+        
+        if (keys.left) player.vx = -speed;
+        else if (keys.right) player.vx = speed;
+        else player.vx = tiltX * speed;
+
+        player.x += player.vx;
+
+        // Wrap екрану
+        if (player.x + player.width < 0) player.x = canvas.width;
+        else if (player.x > canvas.width) player.x = -player.width;
+
+        // Фізика
+        if (player.isImba) {
+            player.vy = -18; 
+            player.imbaTimer -= 16;
+            if (player.imbaTimer <= 0) player.isImba = false;
+            // Ефект іскор
+            if(Math.random() < 0.5) {
+                particles.push({
+                    x: player.x + player.width/2, 
+                    y: player.y + player.height, 
+                    vy: Math.random() * 3, 
+                    life: 20, color: '#2ed573'
+                });
+            }
+        } else {
+            player.vy += gravity;
+        }
+        player.y += player.vy;
+
+        // Рух камери
+        if (player.y < canvas.height / 2) {
+            let diff = (canvas.height / 2) - player.y;
+            player.y = canvas.height / 2;
+            
+            platforms.forEach(p => {
+                p.y += diff;
+                if (p.y > canvas.height) {
+                    p.remove = true;
+                    score++;
+                    document.getElementById('scoreDisplay').innerText = score;
+                }
+            });
+            
+            items.forEach(i => {
+                i.y += diff;
+                if (i.y > canvas.height) i.remove = true;
+            });
+            
+            particles.forEach(p => p.y += diff);
+
+            // Генерація нових
+            let highestPlatformY = Math.min(...platforms.map(p => p.y));
+            // Спавнимо нову платформу, якщо верхня опустилася нижче 70 пікселів
+            if (highestPlatformY > 70) {
+                 platforms.push(createPlatform(highestPlatformY - 70));
+            }
+        }
+
+        platforms = platforms.filter(p => !p.remove);
+        items = items.filter(i => !i.remove);
+
+        // Колізії
+        if (player.vy > 0 && !player.isImba) {
+            platforms.forEach(p => {
+                if (p.active !== false &&
+                    player.x + player.width*0.8 > p.x &&
+                    player.x + player.width*0.2 < p.x + p.w &&
+                    player.y + player.height > p.y &&
+                    player.y + player.height < p.y + p.h + player.vy + 2) { // +2 толерантність
+                    
+                    playSound('jump'); // Звук стрибка
+
+                    if (p.type === 'break') {
+                        p.active = false;
+                        playSound('break');
+                        // Ефект ламання
+                        for(let k=0; k<5; k++) particles.push({x: p.x+p.w/2, y: p.y, vy: -2, life:30, color:'#a4b0be'});
+                    } else if (p.type === 'jump') {
+                        player.vy = -16;
+                    } else {
+                        player.vy = -11.5; // Стандартний стрибок
+                    }
+                }
+            });
+
+            items.forEach(i => {
+                if (player.x + player.width > i.x &&
+                    player.x < i.x + i.w &&
+                    player.y + player.height > i.y &&
+                    player.y < i.y + i.h) {
+                    
+                    if (i.type === 'spring') {
+                        player.vy = -20;
+                        playSound('spring');
+                    } else if (i.type === 'batut') {
+                        player.vy = -35;
+                        playSound('spring');
+                    } else if (i.type === 'imba') {
+                        player.isImba = true;
+                        player.imbaTimer = 3000;
+                        i.remove = true;
+                        playSound('spring'); // або спец звук
+                    } else if (i.type === 'black') {
+                         if (!player.invincible) {
+                             playerHP--;
+                             updateHPDisplay();
+                             i.remove = true;
+                             player.vy = -8;
+                             player.invincible = true;
+                             playSound('break');
+                             setTimeout(() => player.invincible = false, 1500);
+                         }
+                    }
+                }
+            });
+        }
+
+        // Частинки
+        particles.forEach(p => {
+            p.y += p.vy;
+            p.life--;
+        });
+        particles = particles.filter(p => p.life > 0);
+
+        // Game Over
+        if (playerHP <= 0 || player.y > canvas.height + 100) {
+            playSound('gameover');
+            gameOver();
+        }
+    }
+
+    function gameOver() {
+        gameState = 'GAMEOVER';
+        document.getElementById('hud').style.display = 'none';
+        document.getElementById('gameOverScreen').classList.remove('hidden');
+        document.getElementById('finalScore').innerText = "Рахунок: " + score;
+    }
+
+    function updateHPDisplay() {
+        let hearts = "";
+        for(let i=0; i<playerHP; i++) hearts += "❤";
+        document.getElementById('hpDisplay').innerText = hearts;
+    }
+
+    // --- МАЛЮВАННЯ ---
+
+    function draw() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Платформи (Малюємо кодом, щоб було чітко)
+        platforms.forEach(p => {
+            if (!p.active && p.type === 'break') return;
+
+            let color = '#2ed573'; // normal
+            let border = '#218c74';
+            
+            if (p.type === 'jump') { color = '#ff4757'; border = '#b33939'; }
+            if (p.type === 'break') { color = '#a4b0be'; border = '#747d8c'; }
+
+            // Тінь
+            ctx.fillStyle = "rgba(0,0,0,0.1)";
+            ctx.fillRect(p.x + 5, p.y + 5, p.w, p.h);
+
+            // Основна форма (заокруглена)
+            ctx.fillStyle = color;
+            ctx.strokeStyle = border;
+            ctx.lineWidth = 2;
+            
+            ctx.beginPath();
+            ctx.roundRect(p.x, p.y, p.w, p.h, 8);
+            ctx.fill();
+            ctx.stroke();
+
+            // Блік
+            ctx.fillStyle = "rgba(255,255,255,0.3)";
+            ctx.fillRect(p.x + 5, p.y + 3, p.w - 10, 4);
+        });
+
+        // Предмети
+        items.forEach(i => {
+            let img = images[i.imgKey];
+            if (img && img.complete) {
+                ctx.drawImage(img, i.x, i.y, i.w, i.h);
+            }
+        });
+
+        // Частинки
+        particles.forEach(p => {
+            ctx.fillStyle = p.color;
+            ctx.fillRect(p.x, p.y, 5, 5);
+        });
+
+        // Гравець
+        let pImg = images[selectedCharName];
+        
+        ctx.save();
+        // Якщо невразливий - блимає
+        if (player.invincible) {
+            ctx.globalAlpha = 0.5;
+        }
+
+        // Ефект IMBA (світіння)
+        if (player.isImba) {
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = "#2ed573";
+        }
+
+        // Поворот гравця в сторону руху
+        if (player.vx > 1) { // Вправо
+            ctx.translate(player.x + player.width/2, player.y + player.height/2);
+            ctx.rotate(0.2); 
+            ctx.translate(-(player.x + player.width/2), -(player.y + player.height/2));
+        } else if (player.vx < -1) { // Вліво
+             ctx.translate(player.x + player.width/2, player.y + player.height/2);
+             ctx.rotate(-0.2);
+             ctx.translate(-(player.x + player.width/2), -(player.y + player.height/2));
+        }
+
+        if (pImg && pImg.complete) {
+            ctx.drawImage(pImg, player.x, player.y, player.width, player.height);
+        }
+        ctx.restore();
+    }
+
+    // --- ОБРОБКА ПОДІЙ ---
+    window.addEventListener('keydown', e => {
+        if (e.code === 'ArrowLeft') keys.left = true;
+        if (e.code === 'ArrowRight') keys.right = true;
+    });
+    window.addEventListener('keyup', e => {
+        if (e.code === 'ArrowLeft') keys.left = false;
+        if (e.code === 'ArrowRight') keys.right = false;
+    });
+
+    function handleOrientation(event) {
+        let tilt = event.gamma; 
+        if (tilt > 90) tilt = 90;
+        if (tilt < -90) tilt = -90;
+        tiltX = tilt / 15; // Чутливість
+        if (tiltX > 1) tiltX = 1;
+        if (tiltX < -1) tiltX = -1;
+    }
+
+    // Поліфіл для roundRect (для старих браузерів)
+    if (!CanvasRenderingContext2D.prototype.roundRect) {
+        CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
+            if (w < 2 * r) r = w / 2;
+            if (h < 2 * r) r = h / 2;
+            this.beginPath();
+            this.moveTo(x + r, y);
+            this.arcTo(x + w, y, x + w, y + h, r);
+            this.arcTo(x + w, y + h, x, y + h, r);
+            this.arcTo(x, y + h, x, y, r);
+            this.arcTo(x, y, x + w, y, r);
+            this.closePath();
+            return this;
+        };
+    }
+</script>
+</body>
+</html>
