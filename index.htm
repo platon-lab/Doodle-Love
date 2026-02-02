@@ -402,7 +402,7 @@
         updateHPDisplay();
         player.y = canvas.height - 150;
         player.x = canvas.width/2 - 25;
-        player.vy = -12;
+        player.vy = -9;
         player.isImba = false;
         lastPlatformX = canvas.width/2;
         
@@ -670,7 +670,7 @@
         let tilt = event.gamma; 
         if (tilt > 90) tilt = 90;
         if (tilt < -90) tilt = -90;
-        tiltX = tilt / 15; // Чутливість
+        tiltX = tilt / 30; // Чутливість
         if (tiltX > 1) tiltX = 1;
         if (tiltX < -1) tiltX = -1;
     }
