@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Doodle Love: Remastered</title>
+    <title>Doodle Love: Remastered 2.0</title>
     <style>
         @import url('https://fonts.googleapis.com/css2?family=Fredoka+One&display=swap');
 
@@ -27,6 +27,7 @@
             margin: 0 auto;
             background: transparent;
             box-shadow: 0 0 50px rgba(0,0,0,0.05);
+            cursor: crosshair;
         }
 
         /* UI Елементи */
@@ -54,23 +55,36 @@
             letter-spacing: 2px;
         }
         h2 { color: #535c68; font-size: 22px; margin-bottom: 25px; }
-        p { color: #57606f; font-size: 18px; max-width: 85%; line-height: 1.6; background: #fff; padding: 20px; border-radius: 15px; border: 2px dashed #ccc; }
+        p { color: #57606f; font-size: 16px; max-width: 85%; line-height: 1.5; background: #fff; padding: 15px; border-radius: 15px; border: 2px dashed #ccc; }
 
         .btn {
             background: #2ed573;
             color: white;
             border: none;
-            padding: 15px 50px;
-            font-size: 26px;
+            padding: 15px 40px;
+            font-size: 24px;
             border-radius: 50px;
             cursor: pointer;
             font-family: 'Fredoka One', cursive;
             box-shadow: 0 8px 0 #219d55, 0 15px 20px rgba(0,0,0,0.2);
             transition: all 0.1s;
-            margin-top: 25px;
+            margin-top: 15px;
             text-transform: uppercase;
+            min-width: 200px;
         }
         .btn:active { transform: translateY(8px); box-shadow: 0 0 0 #219d55, inset 0 5px 10px rgba(0,0,0,0.2); }
+        
+        .btn-red {
+            background: #ff4757;
+            box-shadow: 0 8px 0 #b33939, 0 15px 20px rgba(0,0,0,0.2);
+        }
+        .btn-red:active { box-shadow: 0 0 0 #b33939, inset 0 5px 10px rgba(0,0,0,0.2); }
+
+        .btn-blue {
+            background: #54a0ff;
+            box-shadow: 0 8px 0 #2e86de, 0 15px 20px rgba(0,0,0,0.2);
+        }
+        .btn-blue:active { box-shadow: 0 0 0 #2e86de, inset 0 5px 10px rgba(0,0,0,0.2); }
 
         /* Вибір персонажа */
         .char-grid {
@@ -128,6 +142,27 @@
         }
         .hp-bar { color: #ff4757; letter-spacing: 5px; }
 
+        /* Кнопка Паузи */
+        #pauseBtn {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            width: 50px;
+            height: 50px;
+            background: white;
+            border-radius: 50%;
+            border: 3px solid #2f3542;
+            display: none;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 0 #2f3542;
+            z-index: 20;
+            pointer-events: auto;
+        }
+        #pauseBtn:active { transform: translateY(4px); box-shadow: none; }
+
         .hidden { display: none !important; }
     </style>
 </head>
@@ -161,30 +196,40 @@
         <h1>ЯК ГРАТИ</h1>
         <p>
            📱 <b>Телефон:</b> Нахиляй вліво/вправо<br>
-           💻 <b>ПК:</b> Стрілочки &#8592; та &#8594;<br><br>
-           🚀 <span style="color:#2ed573">Зелений буст</span> - супер швидкість!<br>
-           💣 <span style="color:#2f3542">Чорна діра</span> - мінус сердечко!<br>
-           🍪 <span style="color:#a4b0be">Сірі платформи</span> - ламаються!
+           💻 <b>ПК:</b> Стрілочки &#8592; та &#8594;<br>
+           🔫 <b>Клік:</b> СТРІЛЯТИ!<br><br>
+           🚀 <b>МЕГА БУСТ:</b> Рідка ракета - шалений політ!<br>
+           💣 <b>Чорна діра:</b> Стріляй в неї!
         </p>
         <button class="btn" onclick="startGame()">ПОГНАЛИ!</button>
+    </div>
+
+    <div id="pauseScreen" class="overlay hidden">
+        <h1>ПАУЗА</h1>
+        <button class="btn" onclick="togglePause()">ПРОДОВЖИТИ</button>
+        <button class="btn btn-red" onclick="resetProgress()">СТЕРТИ ПРОГРЕС</button>
+        <button class="btn btn-blue" onclick="location.reload()">В МЕНЮ</button>
     </div>
 
     <div id="gameOverScreen" class="overlay hidden">
         <h1 style="color:#2f3542">ОЙ, ВСЕ!</h1>
         <h2 id="finalScore" style="font-size: 30px; color: #ff4757;">Рахунок: 0</h2>
-        <button class="btn" onclick="location.reload()">ЩЕ РАЗ</button>
+        <h2 id="bestScore" style="font-size: 24px; color: #ffa502;">Рекорд: 0</h2>
+        <button class="btn" onclick="startGame()">ЩЕ РАЗ</button>
+        <button class="btn btn-blue" onclick="location.reload()">МЕНЮ</button>
     </div>
 
     <div id="hud">
         <div class="hud-text" id="scoreDisplay">0</div>
         <div class="hud-text hp-bar" id="hpDisplay">❤❤❤</div>
     </div>
+    
+    <div id="pauseBtn" onclick="togglePause()">⏸</div>
 
     <canvas id="gameCanvas"></canvas>
 
 <script>
-    // --- ВБУДОВАНІ SVG АСЕТИ (Щоб картинки завжди працювали) ---
-    // Я згенерував прості векторні малюнки для героїв та предметів
+    // --- ВБУДОВАНІ SVG АСЕТИ ---
     const SVGS = {
         'Tito': `Tito.png`,
         'Smartik': `Smartik.png`,
@@ -193,6 +238,7 @@
         'Spring': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><path d="M 10 40 Q 25 10 40 40" fill="none" stroke="%23747d8c" stroke-width="4"/><rect x="5" y="40" width="40" height="5" fill="%232f3542"/></svg>`,
         'Batut': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><ellipse cx="25" cy="35" rx="20" ry="5" fill="%23ff6348" stroke="%232f3542" stroke-width="2"/><line x1="10" y1="35" x2="5" y2="45" stroke="%232f3542" stroke-width="2"/><line x1="40" y1="35" x2="45" y2="45" stroke="%232f3542" stroke-width="2"/></svg>`,
         'Imba': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><polygon points="25,5 31,18 45,18 34,26 38,39 25,31 12,39 16,26 5,18 19,18" fill="%232ed573" stroke="%232f3542" stroke-width="2"/></svg>`,
+        'Rocket': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><path d="M25 5 Q35 25 40 35 L10 35 Q15 25 25 5 Z" fill="%23ff4757" stroke="%232f3542" stroke-width="2"/><rect x="20" y="35" width="10" height="5" fill="%2357606f"/><path d="M20 40 L25 50 L30 40" fill="orange"/></svg>`,
         'Black': `data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="black"/><circle cx="25" cy="25" r="18" fill="none" stroke="%23a55eea" stroke-width="2" stroke-dasharray="4"/></svg>`
     };
 
@@ -202,7 +248,7 @@
     document.getElementById('menuImgJunior').src = SVGS['Junior'];
     document.getElementById('menuImgFil').src = SVGS['Fil'];
 
-    // --- ЗВУКОВА СИСТЕМА (Web Audio API) ---
+    // --- ЗВУКОВА СИСТЕМА ---
     const AudioContext = window.AudioContext || window.webkitAudioContext;
     let audioCtx;
 
@@ -225,6 +271,24 @@
             osc.frequency.exponentialRampToValueAtTime(500, now + 0.1);
             gainNode.gain.setValueAtTime(0.3, now);
             gainNode.gain.exponentialRampToValueAtTime(0.01, now + 0.1);
+            osc.start(now);
+            osc.stop(now + 0.1);
+        }
+        else if (type === 'mega') { // Звук ракети
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(100, now);
+            osc.frequency.linearRampToValueAtTime(800, now + 1.0);
+            gainNode.gain.setValueAtTime(0.3, now);
+            gainNode.gain.linearRampToValueAtTime(0, now + 1.0);
+            osc.start(now);
+            osc.stop(now + 1.0);
+        }
+        else if (type === 'shoot') {
+            osc.type = 'square';
+            osc.frequency.setValueAtTime(800, now);
+            osc.frequency.exponentialRampToValueAtTime(100, now + 0.1);
+            gainNode.gain.setValueAtTime(0.1, now);
+            gainNode.gain.linearRampToValueAtTime(0.01, now + 0.1);
             osc.start(now);
             osc.stop(now + 0.1);
         }
@@ -266,17 +330,19 @@
 
     let gameState = 'MENU';
     let score = 0;
+    // Завантажуємо рекорд з пам'яті
+    let highScore = localStorage.getItem('doodleHighScore') ? parseInt(localStorage.getItem('doodleHighScore')) : 0;
+    
     let selectedCharName = 'Tito';
     let playerHP = 3;
 
-    // Завантаження зображень з SVGS
+    // Завантаження зображень
     const images = {};
     for (let key in SVGS) {
         let img = new Image();
         img.src = SVGS[key];
         images[key] = img;
     }
-    // Для платформ ми будемо малювати кодом для кращої продуктивності, але предмети - картинками
 
     const player = {
         x: canvas.width / 2 - 25,
@@ -285,29 +351,38 @@
         height: 50,
         vx: 0,
         vy: 0,
+        // Статуси
         isImba: false,
         imbaTimer: 0,
-        invincible: false
+        isMega: false, // МЕГА БУСТ
+        megaTimer: 0,
+        invincible: false,
+        // Для анімації стиснення
+        scaleX: 1,
+        scaleY: 1
     };
 
-    const gravity = 0.45;
+    const gravity = 0.35;
+    const jumpForce = -10;
+    
     let platforms = [];
     let items = [];
     let particles = [];
+    let bullets = [];
     
-    // Зберігаємо X останньої платформи, щоб нова була поруч
     let lastPlatformX = canvas.width / 2; 
+    let lastPlatformType = 'normal';
 
     let tiltX = 0;
     let keys = { left: false, right: false };
 
-    // --- ЛОГІКА МЕНЮ ---
+    // --- ЛОГІКА МЕНЮ ТА ПАУЗИ ---
     
     function selectChar(name, el) {
         selectedCharName = name;
         document.querySelectorAll('.char-option').forEach(d => d.classList.remove('selected'));
         el.classList.add('selected');
-        initAudio(); // Ініціалізація аудіо при кліку
+        initAudio();
     }
 
     function showInstructions() {
@@ -317,81 +392,116 @@
         initAudio();
     }
 
+    function togglePause() {
+        if (gameState === 'GAME') {
+            gameState = 'PAUSE';
+            document.getElementById('pauseScreen').classList.remove('hidden');
+            document.getElementById('pauseBtn').style.display = 'none';
+        } else if (gameState === 'PAUSE') {
+            gameState = 'GAME';
+            document.getElementById('pauseScreen').classList.add('hidden');
+            document.getElementById('pauseBtn').style.display = 'flex';
+            loop(); // Перезапускаємо цикл
+        }
+    }
+
+    function resetProgress() {
+        if (confirm("Точно видалити рекорд?")) {
+            highScore = 0;
+            localStorage.setItem('doodleHighScore', 0);
+            alert("Прогрес скинуто!");
+            togglePause(); // Повертаємось у гру
+        }
+    }
+
     function startGame() {
         initAudio();
-        // iOS дозвіл
         if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
             DeviceOrientationEvent.requestPermission()
-                .then(response => {
-                    if (response === 'granted') {
-                        window.addEventListener('deviceorientation', handleOrientation);
-                    }
-                })
+                .then(response => { if (response === 'granted') window.addEventListener('deviceorientation', handleOrientation); })
                 .catch(console.error);
         } else {
             window.addEventListener('deviceorientation', handleOrientation);
         }
 
         document.getElementById('instrScreen').classList.add('hidden');
+        document.getElementById('gameOverScreen').classList.add('hidden');
         document.getElementById('hud').style.display = 'flex';
+        document.getElementById('pauseBtn').style.display = 'flex'; // Показати кнопку паузи
+        
         gameState = 'GAME';
         resetGame();
         loop();
     }
 
-    // --- ГЕНЕРАЦІЯ (ПОКРАЩЕНА) ---
+    // --- ГЕНЕРАЦІЯ ---
 
     function createPlatform(y) {
         let type = 'normal';
-        if (score >= 500 && Math.random() < 0.25) type = 'break';
-        else if (score >= 100 && Math.random() < 0.15) type = 'jump';
+        let isMoving = false;
+        let speed = 0;
 
-        // 1. Покращена логіка позиції X (щоб можна було дострибнути)
-        let minX = Math.max(0, lastPlatformX - 250); // Макс стрибок вліво
-        let maxX = Math.min(canvas.width - 70, lastPlatformX + 250); // Макс стрибок вправо
-        
+        let r = Math.random();
+
+        if (score >= 500 && r < 0.10 && lastPlatformType !== 'break') {
+            type = 'break';
+        }
+        else if (score >= 50 && r < 0.30) {
+            type = 'moving';
+            isMoving = true;
+            speed = (Math.random() * 2) + 1;
+        }
+        else if (r < 0.45) {
+            type = 'onetime';
+        }
+        else if (score >= 100 && r < 0.55) {
+            type = 'jump';
+        }
+
+        lastPlatformType = type;
+
+        let minX = Math.max(0, lastPlatformX - 250);
+        let maxX = Math.min(canvas.width - 70, lastPlatformX + 250);
         let x = Math.random() * (maxX - minX) + minX;
-        
-        // Корекція, щоб не вилазило за екран
         if (x < 0) x = 0;
         if (x > canvas.width - 70) x = canvas.width - 70;
 
         lastPlatformX = x;
 
         let p = {
-            x: x,
-            y: y,
-            w: 70, // Трохи ширші платформи для зручності
-            h: 18,
-            type: type,
-            active: true
+            x: x, y: y, w: 70, h: 18,
+            type: type, active: true, moving: isMoving, speed: speed,
+            dir: Math.random() < 0.5 ? 1 : -1
         };
 
-        // Генерація предметів (тільки на міцних платформах)
-        if (type !== 'break' && Math.random() < 0.12) {
-            let itemType = 'spring';
-            let r = Math.random();
-            if (r < 0.45) itemType = 'spring';
-            else if (r < 0.65) itemType = 'batut';
-            else if (r < 0.75) itemType = 'imba';
-            else if (r < 0.95) itemType = 'black';
+        if (type === 'normal' || type === 'moving') {
+            if (Math.random() < 0.12) {
+                let itemType = 'spring';
+                let ir = Math.random();
+                
+                // Шанси спавну предметів
+                if (ir < 0.40) itemType = 'spring';
+                else if (ir < 0.60) itemType = 'batut';
+                else if (ir < 0.70) itemType = 'imba';
+                else if (ir < 0.90) itemType = 'black';
+                else if (ir < 0.95) itemType = 'mega'; // 5% шанс на МЕГА РАКЕТУ
 
-            // Назва ключа в об'єкті images
-            let imgKey = '';
-            if(itemType === 'spring') imgKey = 'Spring';
-            if(itemType === 'batut') imgKey = 'Batut';
-            if(itemType === 'imba') imgKey = 'Imba';
-            if(itemType === 'black') imgKey = 'Black';
+                let imgKey = '';
+                if(itemType === 'spring') imgKey = 'Spring';
+                if(itemType === 'batut') imgKey = 'Batut';
+                if(itemType === 'imba') imgKey = 'Imba';
+                if(itemType === 'mega') imgKey = 'Rocket';
+                if(itemType === 'black') imgKey = 'Black';
 
-            items.push({
-                x: p.x + p.w/2 - 15,
-                y: p.y - 30,
-                w: 30,
-                h: 30,
-                type: itemType,
-                imgKey: imgKey,
-                platform: p
-            });
+                items.push({
+                    x: p.x + p.w/2 - 15,
+                    y: p.y - 30,
+                    w: 30, h: 30,
+                    type: itemType,
+                    imgKey: imgKey,
+                    platform: p
+                });
+            }
         }
         return p;
     }
@@ -404,16 +514,21 @@
         player.x = canvas.width/2 - 25;
         player.vy = -9;
         player.isImba = false;
+        player.isMega = false;
+        player.scaleX = 1; 
+        player.scaleY = 1;
+        
         lastPlatformX = canvas.width/2;
+        lastPlatformType = 'normal';
         
         platforms = [];
         items = [];
+        bullets = [];
         
-        // Стартові платформи (ближче одна до одної)
-        // Крок 70px гарантує, що можна легко дострибнути
         for (let i = canvas.height; i > 0; i -= 70) {
             let p = createPlatform(i);
-            p.type = 'normal'; // Перші платформи завжди нормальні
+            p.type = 'normal';
+            p.moving = false;
             platforms.push(p);
         }
     }
@@ -421,16 +536,16 @@
     // --- ОСНОВНИЙ ЦИКЛ ---
 
     function loop() {
-        if (gameState !== 'GAME') return;
+        if (gameState !== 'GAME') return; // Якщо пауза або меню, цикл зупиняється
         update();
         draw();
         requestAnimationFrame(loop);
     }
 
     function update() {
-        // Управління
-        let speed = 7;
-        if (player.isImba) speed = 10;
+        let speed = 6;
+        if (player.isImba) speed = 9;
+        if (player.isMega) speed = 12; // Ще швидше керування під час мега бусту
         
         if (keys.left) player.vx = -speed;
         else if (keys.right) player.vx = speed;
@@ -438,16 +553,54 @@
 
         player.x += player.vx;
 
-        // Wrap екрану
         if (player.x + player.width < 0) player.x = canvas.width;
         else if (player.x > canvas.width) player.x = -player.width;
 
-        // Фізика
-        if (player.isImba) {
-            player.vy = -18; 
+        platforms.forEach(p => {
+            if (p.moving) {
+                p.x += p.speed * p.dir;
+                if (p.x <= 0 || p.x + p.w >= canvas.width) p.dir *= -1;
+            }
+        });
+
+        items.forEach(i => {
+            if (i.platform && i.platform.moving) {
+                i.x += i.platform.speed * i.platform.dir;
+            }
+        });
+
+        // --- ФІЗИКА ГРАВЦЯ ---
+        
+        // Відновлення форми (еластичність)
+        player.scaleX += (1 - player.scaleX) * 0.15;
+        player.scaleY += (1 - player.scaleY) * 0.15;
+
+        // ЛОГІКА МЕГА УЛЬТРА БУСТУ
+        if (player.isMega) {
+            player.vy = -30; // НЕРЕАЛЬНА ШВИДКІСТЬ ВГОРУ
+            player.megaTimer -= 16;
+            player.invincible = true; // Безсмертя
+            
+            // Вогонь з дупи
+            for(let k=0; k<2; k++) {
+                particles.push({
+                    x: player.x + player.width/2 + (Math.random()-0.5)*20, 
+                    y: player.y + player.height, 
+                    vy: Math.random() * 5 + 5, 
+                    life: 15, color: k%2==0 ? '#ff4757' : '#ffa502'
+                });
+            }
+
+            if (player.megaTimer <= 0) {
+                player.isMega = false;
+                player.invincible = false;
+                player.vy = -10; // Трохи підкинути на виході
+            }
+        } 
+        else if (player.isImba) {
+            player.vy = -15; 
             player.imbaTimer -= 16;
             if (player.imbaTimer <= 0) player.isImba = false;
-            // Ефект іскор
             if(Math.random() < 0.5) {
                 particles.push({
                     x: player.x + player.width/2, 
@@ -459,6 +612,7 @@
         } else {
             player.vy += gravity;
         }
+        
         player.y += player.vy;
 
         // Рух камери
@@ -470,7 +624,7 @@
                 p.y += diff;
                 if (p.y > canvas.height) {
                     p.remove = true;
-                    score++;
+                    score += 3;
                     document.getElementById('scoreDisplay').innerText = score;
                 }
             });
@@ -479,40 +633,74 @@
                 i.y += diff;
                 if (i.y > canvas.height) i.remove = true;
             });
-            
+
+            bullets.forEach(b => b.y += diff);
             particles.forEach(p => p.y += diff);
 
-            // Генерація нових
             let highestPlatformY = Math.min(...platforms.map(p => p.y));
-            // Спавнимо нову платформу, якщо верхня опустилася нижче 70 пікселів
             if (highestPlatformY > 70) {
                  platforms.push(createPlatform(highestPlatformY - 70));
             }
         }
 
+        bullets.forEach(b => {
+            b.y += b.vy;
+            if (b.y < -50) b.remove = true;
+            
+            items.forEach(i => {
+                if (i.type === 'black' && !i.remove && !b.remove) {
+                    let dx = b.x - (i.x + i.w/2);
+                    let dy = b.y - (i.y + i.h/2);
+                    if (Math.sqrt(dx*dx + dy*dy) < 30) {
+                        i.remove = true;
+                        b.remove = true;
+                        playSound('break');
+                        for(let k=0; k<10; k++) {
+                            particles.push({
+                                x: i.x+i.w/2, y: i.y+i.h/2, 
+                                vy: (Math.random()-0.5)*10, vx: (Math.random()-0.5)*10,
+                                life:20, color:'#a55eea'
+                            });
+                        }
+                    }
+                }
+            });
+        });
+
         platforms = platforms.filter(p => !p.remove);
         items = items.filter(i => !i.remove);
+        bullets = bullets.filter(b => !b.remove);
 
         // Колізії
-        if (player.vy > 0 && !player.isImba) {
+        if (player.vy > 0 && !player.isImba && !player.isMega) {
             platforms.forEach(p => {
                 if (p.active !== false &&
                     player.x + player.width*0.8 > p.x &&
                     player.x + player.width*0.2 < p.x + p.w &&
                     player.y + player.height > p.y &&
-                    player.y + player.height < p.y + p.h + player.vy + 2) { // +2 толерантність
+                    player.y + player.height < p.y + p.h + player.vy + 2) {
                     
-                    playSound('jump'); // Звук стрибка
+                    playSound('jump');
+
+                    // ЕФЕКТ ПЛЮЩЕННЯ (Squash)
+                    player.scaleX = 1.3;
+                    player.scaleY = 0.7;
 
                     if (p.type === 'break') {
                         p.active = false;
                         playSound('break');
-                        // Ефект ламання
                         for(let k=0; k<5; k++) particles.push({x: p.x+p.w/2, y: p.y, vy: -2, life:30, color:'#a4b0be'});
-                    } else if (p.type === 'jump') {
-                        player.vy = -16;
-                    } else {
-                        player.vy = -11.5; // Стандартний стрибок
+                    } 
+                    else if (p.type === 'jump') {
+                        player.vy = jumpForce * 1.5;
+                    }
+                    else if (p.type === 'onetime') {
+                        player.vy = jumpForce;
+                        p.remove = true; 
+                        for(let k=0; k<5; k++) particles.push({x: p.x+p.w/2, y: p.y, vy: -1, life:20, color:'#fd79a8'});
+                    }
+                    else {
+                        player.vy = jumpForce;
                     }
                 }
             });
@@ -524,22 +712,27 @@
                     player.y < i.y + i.h) {
                     
                     if (i.type === 'spring') {
-                        player.vy = -20;
+                        player.vy = -18;
                         playSound('spring');
                     } else if (i.type === 'batut') {
-                        player.vy = -35;
+                        player.vy = -28;
                         playSound('spring');
                     } else if (i.type === 'imba') {
                         player.isImba = true;
                         player.imbaTimer = 3000;
                         i.remove = true;
-                        playSound('spring'); // або спец звук
+                        playSound('spring');
+                    } else if (i.type === 'mega') { // ПІДБІР РАКЕТИ
+                        player.isMega = true;
+                        player.megaTimer = 5000; // 5 Секунд
+                        i.remove = true;
+                        playSound('mega');
                     } else if (i.type === 'black') {
                          if (!player.invincible) {
                              playerHP--;
                              updateHPDisplay();
                              i.remove = true;
-                             player.vy = -8;
+                             player.vy = -5;
                              player.invincible = true;
                              playSound('break');
                              setTimeout(() => player.invincible = false, 1500);
@@ -549,14 +742,13 @@
             });
         }
 
-        // Частинки
         particles.forEach(p => {
             p.y += p.vy;
+            if(p.vx) p.x += p.vx;
             p.life--;
         });
         particles = particles.filter(p => p.life > 0);
 
-        // Game Over
         if (playerHP <= 0 || player.y > canvas.height + 100) {
             playSound('gameover');
             gameOver();
@@ -566,8 +758,17 @@
     function gameOver() {
         gameState = 'GAMEOVER';
         document.getElementById('hud').style.display = 'none';
+        document.getElementById('pauseBtn').style.display = 'none';
         document.getElementById('gameOverScreen').classList.remove('hidden');
+        
+        // Збереження рекорду
+        if (score > highScore) {
+            highScore = score;
+            localStorage.setItem('doodleHighScore', highScore);
+        }
+
         document.getElementById('finalScore').innerText = "Рахунок: " + score;
+        document.getElementById('bestScore').innerText = "Рекорд: " + highScore;
     }
 
     function updateHPDisplay() {
@@ -581,21 +782,20 @@
     function draw() {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Платформи (Малюємо кодом, щоб було чітко)
         platforms.forEach(p => {
             if (!p.active && p.type === 'break') return;
 
-            let color = '#2ed573'; // normal
+            let color = '#2ed573';
             let border = '#218c74';
             
             if (p.type === 'jump') { color = '#ff4757'; border = '#b33939'; }
             if (p.type === 'break') { color = '#a4b0be'; border = '#747d8c'; }
+            if (p.type === 'moving') { color = '#54a0ff'; border = '#2e86de'; }
+            if (p.type === 'onetime') { color = '#fd79a8'; border = '#e84393'; }
 
-            // Тінь
             ctx.fillStyle = "rgba(0,0,0,0.1)";
             ctx.fillRect(p.x + 5, p.y + 5, p.w, p.h);
 
-            // Основна форма (заокруглена)
             ctx.fillStyle = color;
             ctx.strokeStyle = border;
             ctx.lineWidth = 2;
@@ -605,20 +805,43 @@
             ctx.fill();
             ctx.stroke();
 
-            // Блік
             ctx.fillStyle = "rgba(255,255,255,0.3)";
             ctx.fillRect(p.x + 5, p.y + 3, p.w - 10, 4);
-        });
 
-        // Предмети
-        items.forEach(i => {
-            let img = images[i.imgKey];
-            if (img && img.complete) {
-                ctx.drawImage(img, i.x, i.y, i.w, i.h);
+            if (p.type === 'onetime') {
+                ctx.fillStyle = "rgba(255,255,255,0.5)";
+                ctx.fillRect(p.x + 15, p.y + 5, 5, 8);
+                ctx.fillRect(p.x + 30, p.y + 5, 5, 8);
+                ctx.fillRect(p.x + 45, p.y + 5, 5, 8);
             }
         });
 
-        // Частинки
+        items.forEach(i => {
+            let img = images[i.imgKey];
+            if (img && img.complete) {
+                // Пульсація для мега предмета
+                if (i.type === 'mega') {
+                    ctx.save();
+                    let scale = 1 + Math.sin(Date.now() / 100) * 0.1;
+                    ctx.translate(i.x + i.w/2, i.y + i.h/2);
+                    ctx.scale(scale, scale);
+                    ctx.drawImage(img, -i.w/2, -i.h/2, i.w, i.h);
+                    ctx.restore();
+                } else {
+                    ctx.drawImage(img, i.x, i.y, i.w, i.h);
+                }
+            }
+        });
+
+        bullets.forEach(b => {
+            ctx.beginPath();
+            ctx.arc(b.x, b.y, 6, 0, Math.PI * 2);
+            ctx.fillStyle = '#ffa502';
+            ctx.fill();
+            ctx.strokeStyle = '#ff6348';
+            ctx.stroke();
+        });
+
         particles.forEach(p => {
             ctx.fillStyle = p.color;
             ctx.fillRect(p.x, p.y, 5, 5);
@@ -628,30 +851,37 @@
         let pImg = images[selectedCharName];
         
         ctx.save();
-        // Якщо невразливий - блимає
+        
+        // Центруємо систему координат на гравцеві для трансформацій
+        ctx.translate(player.x + player.width/2, player.y + player.height/2);
+
         if (player.invincible) {
             ctx.globalAlpha = 0.5;
         }
 
-        // Ефект IMBA (світіння)
         if (player.isImba) {
             ctx.shadowBlur = 20;
             ctx.shadowColor = "#2ed573";
         }
-
-        // Поворот гравця в сторону руху
-        if (player.vx > 1) { // Вправо
-            ctx.translate(player.x + player.width/2, player.y + player.height/2);
-            ctx.rotate(0.2); 
-            ctx.translate(-(player.x + player.width/2), -(player.y + player.height/2));
-        } else if (player.vx < -1) { // Вліво
-             ctx.translate(player.x + player.width/2, player.y + player.height/2);
-             ctx.rotate(-0.2);
-             ctx.translate(-(player.x + player.width/2), -(player.y + player.height/2));
+        
+        if (player.isMega) {
+            ctx.shadowBlur = 30;
+            ctx.shadowColor = "#ff4757";
         }
 
+        // Застосовуємо стиснення (Squash)
+        ctx.scale(player.scaleX, player.scaleY);
+
+        // Поворот від руху
+        if (player.vx > 1) {
+            ctx.rotate(0.2); 
+        } else if (player.vx < -1) {
+             ctx.rotate(-0.2);
+        }
+
+        // Малюємо гравця (відцентровано)
         if (pImg && pImg.complete) {
-            ctx.drawImage(pImg, player.x, player.y, player.width, player.height);
+            ctx.drawImage(pImg, -player.width/2, -player.height/2, player.width, player.height);
         }
         ctx.restore();
     }
@@ -660,22 +890,34 @@
     window.addEventListener('keydown', e => {
         if (e.code === 'ArrowLeft') keys.left = true;
         if (e.code === 'ArrowRight') keys.right = true;
+        if (e.code === 'Escape') togglePause(); // Пауза на ESC
     });
     window.addEventListener('keyup', e => {
         if (e.code === 'ArrowLeft') keys.left = false;
         if (e.code === 'ArrowRight') keys.right = false;
     });
 
+    window.addEventListener('pointerdown', (e) => {
+        // Стріляємо тільки якщо гра, і не натиснули кнопку інтерфейсу
+        if (gameState === 'GAME' && e.target.id !== 'pauseBtn' && e.target.tagName !== 'BUTTON') {
+            bullets.push({
+                x: player.x + player.width/2,
+                y: player.y,
+                vy: -15
+            });
+            playSound('shoot');
+        }
+    });
+
     function handleOrientation(event) {
         let tilt = event.gamma; 
         if (tilt > 90) tilt = 90;
         if (tilt < -90) tilt = -90;
-        tiltX = tilt / 30; // Чутливість
+        tiltX = tilt / 30; 
         if (tiltX > 1) tiltX = 1;
         if (tiltX < -1) tiltX = -1;
     }
 
-    // Поліфіл для roundRect (для старих браузерів)
     if (!CanvasRenderingContext2D.prototype.roundRect) {
         CanvasRenderingContext2D.prototype.roundRect = function (x, y, w, h, r) {
             if (w < 2 * r) r = w / 2;
